@@ -1,8 +1,11 @@
 package edu.macalester.comp124.breakout;
 
+import acm.graphics.GLabel;
+import acm.graphics.GObject;
 import acm.graphics.GRect;
 import acm.program.GraphicsProgram;
 import java.awt.Color;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 /**
@@ -11,109 +14,193 @@ import java.util.ArrayList;
  *
  */
 public class BreakoutProgram extends GraphicsProgram {
+
     /* Private constants */
-    private static final int PAUSE_TIME = 5;
-    private static final int WIDTH = 400;
-    private static final int HEIGHT = 600;
+    private static final int PAUSE_TIME = 5; //Time between each frame of animation.
+    private static final int WIDTH = 400; //Width of the GraphicsProgram canvas.
+    private static final int HEIGHT = 600; //Height of the GraphicsProgram canvas.
 
-    private static final double BRICK_WIDTH = 30;
-    private static final double BRICK_HEIGHT = 10;
-    private static final double BRICK_DISTANCE = 5;
+    private static final double PADDLE_WIDTH = 65; //Width of the paddle.
+    private static final double PADDLE_HEIGHT = 10; //Height of the paddle.
+    private static final double PADDLE_FROM_BOTTOM = 60; //The distance between the paddle and the bottom of the canvas.
 
-    private static final double BRICK_STARTING_X = 10;
-    private static final double BRICK_STARTING_Y = 60;
+    private static final double PADDLE_Y = HEIGHT - PADDLE_FROM_BOTTOM; //Starting Y position of top left of paddle.
+    private static final double PADDLE_X = WIDTH/2 - PADDLE_WIDTH/2; //Starting X position of top left of paddle.
 
-    private static final double PADDLE_WIDTH = 65;
-    private static final double PADDLE_HEIGHT = 10;
-    private static final double PADDLE_FROM_BOTTOM = 60;
-
-    private static final double PADDLE_Y = HEIGHT - PADDLE_FROM_BOTTOM;
-    private static final double PADDLE_X = WIDTH/2 - PADDLE_WIDTH/2;
-
-    private static final double BALL_SIZE = 10;
-    private static final double BALL_XSTART = WIDTH/2 - BALL_SIZE/2;
-    private static final double BALL_YSTART = PADDLE_Y - BALL_SIZE;
+    private static final double BALL_SIZE = 10; //The diameter of the ball.
+    private static final double BALL_X_START = WIDTH/2 - BALL_SIZE/2; //Starting X position of top left of ball.
+    private static final double BALL_Y_START = PADDLE_Y - BALL_SIZE; //Starting Y position of top left of ball.
 
 
+    /* Instance variables */
+    private Ball ball; //The ball.
+    private double dx; //The ball's change of x during animation.
+    private double dy; //The ball's change of y during animation.
+    private Paddle paddle; //The paddle.
+    private BrickWall wall; //The wall.
+    private int lives; //The number of lives left.
+    private GLabel showLives; //The lives display.
 
-    private Ball ball;
-    private double dx;
-    private double dy;
-    private GRect paddle;
-
-    private ArrayList<GRect> bricks;
+    /**
+     * Initializes components of program.
+     */
 
     public void init(){
-        this.resize(WIDTH,HEIGHT+20);
+        this.resize(WIDTH,HEIGHT+20); //Height + 20 due to lost pixels in window.
 
-        bricks = new ArrayList();
-        createAllBricks();
-
-        ball = new Ball(BALL_XSTART, BALL_YSTART, BALL_SIZE, Color.BLACK);
-        ball.setFilled(true);
+        ball = new Ball(BALL_X_START, BALL_Y_START, BALL_SIZE, Color.BLACK);
         add(ball);
 
-        paddle = new GRect(PADDLE_X,PADDLE_Y,PADDLE_WIDTH,PADDLE_HEIGHT);
-        paddle.setFilled(true);
+
+        wall = new BrickWall();
+        add(wall);
+
+        paddle = new Paddle(PADDLE_X,PADDLE_Y,PADDLE_WIDTH,PADDLE_HEIGHT, Color.BLACK);
         add(paddle);
+
+        lives = 3;
+        showLives = new GLabel("Lives: " + Integer.toString(lives),5,20);
+        showLives.setFont("Helvetica-18");
+        add(showLives);
+
+
+
+        addMouseListeners();
 
         dx = 1;
         dy = -1;
 
     }
 
+    /**
+     * Starts the program:
+     *     Animates the ball and constantly checks for collisions, wins, and losses.
+     */
+
     public void run() {
         while(true){
+
             ball.move(dx, dy);
             pause(PAUSE_TIME);
-            if(ball.getX() + BALL_SIZE >= WIDTH || ball.getX() <= 0){
-                dx = -1*dx;
+
+            checkForWallCollision();
+
+            checkForBrickCollision();
+
+            if(checkForLoss() || checkForWin()){
+                break;
             }
-            if(ball.getY()+BALL_SIZE >= HEIGHT || ball.getY() <= 0){
-                dy = -1*dy;
-            }
+
         }
     }
 
-    private void createAllBricks(){
-        double y = BRICK_STARTING_Y;
-        double yDistance = BRICK_DISTANCE + BRICK_HEIGHT;
+    /**
+     * Checks to see if the ball has hit a brick. If the ball hits a brick from it's top or bottom, it'll change
+     * its y movement. If it hits it from the left or right, it'll change its x movement.
+     */
 
-        createBrickRow(y, Color.RED);
-        y += yDistance;
-        createBrickRow(y, new Color(255,128,0));
-        y += yDistance;
-        createBrickRow(y, Color.ORANGE);
-        y += yDistance;
-        createBrickRow(y, Color.YELLOW);
-        y += yDistance;
-        createBrickRow(y, new Color(128,255,0));
-        y += yDistance;
-        createBrickRow(y, Color.GREEN);
-        y += yDistance;
-        createBrickRow(y, Color.CYAN);
-        y += yDistance;
-        createBrickRow(y, new Color(0,128,255));
-        y += yDistance;
-        createBrickRow(y, Color.BLUE);
-        y += yDistance;
-        createBrickRow(y, new Color(128,0,255));
-
+    private void checkForBrickCollision(){
+        GObject Top = wall.getElementAt(ball.getX() + BALL_SIZE/2,ball.getY());
+        GObject Bottom = wall.getElementAt(ball.getX()+ BALL_SIZE/2,ball.getY()+ BALL_SIZE);
+        GObject Right = wall.getElementAt(ball.getX()+ BALL_SIZE,ball.getY() + BALL_SIZE/2);
+        GObject Left = wall.getElementAt(ball.getX(),ball.getY() + BALL_SIZE/2);
+        if(Top != null){
+            wall.remove(Top);
+            dy = -1*dy;
+        }
+        if(Bottom != null){
+            wall.remove(Bottom);
+            dy = -1*dy;
+        }
+        if(Right != null){
+            wall.remove(Right);
+            dx = -1*dx;
+        }
+        if(Left != null){
+            wall.remove(Left);
+            dx = -1*dx;
+        }
 
     }
 
-    private void createBrickRow(double startingY, Color color){
-        double xDistance = BRICK_WIDTH + BRICK_DISTANCE;
-        double x = BRICK_STARTING_X;
-        for(int i = 0; i <= 10; i++){
-            GRect brick = new GRect(x,startingY,BRICK_WIDTH,BRICK_HEIGHT);
-            bricks.add(brick);
-            brick.setFilled(true);
-            brick.setFillColor(color);
-            add(brick);
-            x += xDistance;
+    /**
+     * Checks to see if the ball has hit a wall. If it hit the right or left wall, it'll change its
+     * x movement. If it hits the top, it'll change its y movement.
+     *
+     * Does not account for bottom wall, as that is considered a lost life.
+     */
+
+    private void checkForWallCollision(){
+        if(ball.getX() + BALL_SIZE >= WIDTH || ball.getX() <= 0){
+            dx = -1*dx;
         }
+        if(ball.getY() <= 0){
+            dy = -1*dy;
+        }
+        if(ball.getY() + BALL_SIZE == paddle.getY() &&
+                ball.getX() + BALL_SIZE >= paddle.getX() &&
+                ball.getX() <=  paddle.getX() + paddle.getWidth()){
+            dy = -1*dy;
+        }
+
+    }
+
+    /**
+     * Checks to see if ball has hit the bottom of the screen as well as if the player has gotten a game over.
+     * @return true for game over. Will decrement lives if ball hit bottom and player has not reached game over.
+     */
+
+    private boolean checkForLoss(){
+        if(ball.getY() >= HEIGHT){
+            if(lives > 0) {
+                remove(ball);
+                ball.setLocation(BALL_X_START, BALL_Y_START);
+                lives--;
+                showLives.setLabel("Lives: " + Integer.toString(lives));
+                dy = -1;
+                dx = 1;
+                add(ball);
+                pause(2000);
+            }
+            else{
+                removeAll();
+                GLabel gameOver = new GLabel("GAME OVER", WIDTH/2,HEIGHT/2);
+                gameOver.setFont("Helvetica-24");
+                gameOver.move(-1*gameOver.getWidth()/2,0);
+                add(gameOver);
+                return true;
+            }
+        }
+        return false;
+
+    }
+
+    /**
+     * Checks to see if any bricks remain.
+     * @return true if all bricks are broken and displays a congratulatory message.
+     */
+
+    private boolean checkForWin(){
+        if(wall.getElementCount() == 0){
+            removeAll();
+            GLabel congrats = new GLabel("YOU WON!", WIDTH/2,HEIGHT/2);
+            congrats.setFont("Helvetica-24");
+            congrats.move(-1*congrats.getWidth()/2,0);
+            add(congrats);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Causes the paddle to follow the player's mouse.
+     */
+
+    public void mouseMoved(MouseEvent e){
+        paddle.move(e.getX() - paddle.getX(), 0);
     }
 
 }
+
+
 
