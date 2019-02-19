@@ -32,6 +32,7 @@ public class BreakoutProgram extends GraphicsProgram {
     private static final double BALL_Y_START = PADDLE_Y - BALL_SIZE; //Starting Y position of top left of ball.
 
 
+
     /* Instance variables */
     private Ball ball; //The ball.
     private double dx; //The ball's change of x during animation.
@@ -40,6 +41,9 @@ public class BreakoutProgram extends GraphicsProgram {
     private BrickWall wall; //The wall.
     private int lives; //The number of lives left.
     private GLabel showLives; //The lives display.
+    private int boostcount; //counter for number of bricks after which boost shows up
+    private Ball boost; //bomb boost
+    private GLabel showBoostCount; //brick boost count display
 
     /**
      * Initializes components of program.
@@ -58,11 +62,17 @@ public class BreakoutProgram extends GraphicsProgram {
         paddle = new Paddle(PADDLE_X,PADDLE_Y,PADDLE_WIDTH,PADDLE_HEIGHT, Color.BLACK);
         add(paddle);
 
+        boost = new Ball(0,0,BALL_SIZE, Color.RED);
+
         lives = 3;
         showLives = new GLabel("Lives: " + Integer.toString(lives),5,20);
         showLives.setFont("Helvetica-18");
         add(showLives);
 
+        boostcount = 3;
+        showBoostCount = new GLabel("Boost Count: " + Integer.toString(boostcount),5,40);
+        showBoostCount.setFont("Helvetica-18");
+        add(showBoostCount);
 
 
         addMouseListeners();
@@ -91,6 +101,9 @@ public class BreakoutProgram extends GraphicsProgram {
                 break;
             }
 
+            boost.move(0,1);
+            pause(0.5);
+
         }
     }
 
@@ -107,18 +120,29 @@ public class BreakoutProgram extends GraphicsProgram {
         if(Top != null){
             wall.remove(Top);
             dy = -1*dy;
+            boostcount--;
         }
         if(Bottom != null){
             wall.remove(Bottom);
             dy = -1*dy;
+            boostcount--;
         }
         if(Right != null){
             wall.remove(Right);
             dx = -1*dx;
+            boostcount--;
         }
         if(Left != null){
             wall.remove(Left);
             dx = -1*dx;
+            boostcount--;
+        }
+        showBoostCount.setLabel("Boost Count: " + Integer.toString(boostcount));
+
+        if (boostcount==0){
+            boostcount=5;
+            boost = new Ball(ball.getX(), ball.getY(), BALL_SIZE, Color.RED);
+            add(boost);
         }
 
     }
@@ -139,8 +163,15 @@ public class BreakoutProgram extends GraphicsProgram {
         }
         if(ball.getY() + BALL_SIZE == paddle.getY() &&
                 ball.getX() + BALL_SIZE >= paddle.getX() &&
-                ball.getX() <=  paddle.getX() + paddle.getWidth()){
-            dy = -1*dy;
+                ball.getX() <=  paddle.getX() + paddle.getWidth()) {
+            dy = -1 * dy;
+        }
+        if(boost.getY() + BALL_SIZE == paddle.getY() &&
+                boost.getX() + BALL_SIZE >= paddle.getX() &&
+                boost.getX() <=  paddle.getX() + paddle.getWidth()){
+            remove(boost);
+            lives--;
+
         }
 
     }
