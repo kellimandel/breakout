@@ -87,8 +87,8 @@ public class BreakoutProgram extends GraphicsProgram {
         add(showLives);
 
         boostcount = 5; //this counts the number of bricks that need to be broken for which a boost falls
-        showBoostCount = new GLabel("Red Ball = Bomb; Green Ball = Extra Life",5,40);
-        showBoostCount.setFont("Helvetica-18");
+        showBoostCount = new GLabel("Red Ball = Bomb; Green Ball = Extra Life; Blue Square = Extra Ball",5,40);
+        showBoostCount.setFont("Helvetica-12");
         add(showBoostCount);
 
 
