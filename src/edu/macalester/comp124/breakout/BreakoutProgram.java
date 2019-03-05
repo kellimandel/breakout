@@ -7,6 +7,8 @@ import acm.program.GraphicsProgram;
 import java.awt.Color;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Random;
+
 
 /**
  * Main GraphicsProgram for the breakout game described
@@ -44,7 +46,9 @@ public class BreakoutProgram extends GraphicsProgram {
     private int boostcount; //counter for number of bricks after which boost shows up
     private Ball boost; //bomb boost
     private GLabel showBoostCount; //brick boost count display
-
+    private int boostdx = 0;
+    private int boostdy = 1;
+    private Random rand;
     /**
      * Initializes components of program.
      */
@@ -62,15 +66,15 @@ public class BreakoutProgram extends GraphicsProgram {
         paddle = new Paddle(PADDLE_X,PADDLE_Y,PADDLE_WIDTH,PADDLE_HEIGHT, Color.BLACK);
         add(paddle);
 
-        boost = new Ball(0,0,BALL_SIZE, Color.RED);
+        boost = new Ball(0,0,BALL_SIZE, Color.RED); //this adds a "boost" using the ball class
 
         lives = 3;
         showLives = new GLabel("Lives: " + Integer.toString(lives),5,20);
         showLives.setFont("Helvetica-18");
         add(showLives);
 
-        boostcount = 3;
-        showBoostCount = new GLabel("Boost Count: " + Integer.toString(boostcount),5,40);
+        boostcount = 5; //this counts the number of bricks that need to be broken for which a boost falls
+        showBoostCount = new GLabel("Red Ball = Bomb; Green Ball = Extra Life",5,40);
         showBoostCount.setFont("Helvetica-18");
         add(showBoostCount);
 
@@ -79,6 +83,8 @@ public class BreakoutProgram extends GraphicsProgram {
 
         dx = 1;
         dy = -1;
+
+        rand = new Random();
 
     }
 
@@ -100,9 +106,8 @@ public class BreakoutProgram extends GraphicsProgram {
             if(checkForLoss() || checkForWin()){
                 break;
             }
-
-            boost.move(0,1);
-            pause(0.5);
+            boost.move(boostdx,boostdy);
+            pause(0.15);
 
         }
     }
@@ -137,11 +142,17 @@ public class BreakoutProgram extends GraphicsProgram {
             dx = -1*dx;
             boostcount--;
         }
-        showBoostCount.setLabel("Boost Count: " + Integer.toString(boostcount));
+        //showBoostCount.setLabel("Boost Count: " + Integer.toString(boostcount));
 
         if (boostcount==0){
             boostcount=5;
-            boost = new Ball(ball.getX(), ball.getY(), BALL_SIZE, Color.RED);
+            int randomNum = rand.nextInt((2 - 1) + 1) + 1;
+            if (randomNum==1) {
+                boost = new Ball(ball.getX(), ball.getY(), BALL_SIZE, Color.RED);
+            }
+            if (randomNum==2){
+                boost = new Ball(ball.getX(), ball.getY(), BALL_SIZE, Color.GREEN);
+            }
             add(boost);
         }
 
@@ -170,10 +181,20 @@ public class BreakoutProgram extends GraphicsProgram {
                 boost.getX() + BALL_SIZE >= paddle.getX() &&
                 boost.getX() <=  paddle.getX() + paddle.getWidth()){
             remove(boost);
-            lives--;
+            boostReaction();
 
         }
 
+    }
+
+    private void boostReaction(){
+        if (boost.getColor() == Color.RED){
+            lives--;
+        }
+        if (boost.getColor() == Color.GREEN)
+        {
+            lives++;
+        }
     }
 
     /**
