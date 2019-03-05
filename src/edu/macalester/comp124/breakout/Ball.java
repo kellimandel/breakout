@@ -10,6 +10,9 @@ import java.awt.*;
  */
 public class Ball extends GOval{
 
+
+    private double dx = 1;
+    private double dy = -1;
     private Color color; //Color of ball fill.
     private double diameter; //Ball diameter.
 
@@ -61,6 +64,36 @@ public class Ball extends GOval{
     public void setDiameter(double diameter) {
         this.diameter = diameter;
     }
+
+    public void swapDx(){
+        dx = -1*dx;
+    }
+
+    public void swapDy(){
+        dy = -1*dy;
+    }
+
+
+    public double getDx() {
+        return dx;
+    }
+
+    public double getDy() {
+        return dy;
+    }
+
+    public void setDx(double dx) {
+        this.dx = dx;
+    }
+
+    public void setDy(double dy) {
+        this.dy = dy;
+    }
+
+    public void move(){
+        this.move(dx,dy);
+    }
+
 
 
 }
